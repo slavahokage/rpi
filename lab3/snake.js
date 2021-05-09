@@ -1,8 +1,28 @@
 const cvs = document.getElementById("snake");
 const ctx = cvs.getContext("2d");
 
+
+let menu = new Menu(ctx, "start menu");
+
+cvs.addEventListener("mousedown", function(e) {
+    let clickCoordinates = getMousePosition(cvs, e);
+    menu.click(clickCoordinates.x, clickCoordinates.y);
+});
+
+function getMousePosition(canvas, event) {
+    let rect = canvas.getBoundingClientRect();
+    let x = event.clientX - rect.left;
+    let y = event.clientY - rect.top;
+
+    return {x, y};
+}
+
+
+let isGameEnd = false;
+
 // create the unit
 const box = 32;
+let snakeSpeed = 100;
 
 // load images
 
@@ -49,30 +69,44 @@ let food = {
 let score = 0;
 
 //control the snake
-
 let d;
 
 document.addEventListener("keydown",direction);
 
-function direction(event){
-    let key = event.keyCode;
-    if( key == 37 && d != "RIGHT"){
-        left.play();
-        d = "LEFT";
-    }else if(key == 38 && d != "DOWN"){
-        d = "UP";
-        up.play();
-    }else if(key == 39 && d != "LEFT"){
-        d = "RIGHT";
-        right.play();
-    }else if(key == 40 && d != "UP"){
-        d = "DOWN";
-        down.play();
+function direction(event) {
+    if (menu.isHidden) {
+        let key = event.keyCode;
+        if( key == 37 && d != "RIGHT"){
+            d = "LEFT";
+
+            if (menu.isSoundOn)
+                left.play();
+
+
+        }else if(key == 38 && d != "DOWN"){
+            d = "UP";
+
+            if (menu.isSoundOn)
+                up.play();
+
+        }else if(key == 39 && d != "LEFT"){
+
+            d = "RIGHT";
+
+            if (menu.isSoundOn)
+                right.play();
+
+        }else if(key == 40 && d != "UP"){
+            d = "DOWN";
+
+            if (menu.isSoundOn)
+                down.play();
+        }
     }
 }
 
 // cheack collision function
-function collision(head,array){
+function collision(head,array) {
     for(let i = 0; i < array.length; i++){
         if(head.x == array[i].x && head.y == array[i].y){
             return true;
@@ -83,18 +117,20 @@ function collision(head,array){
 
 // draw everything to the canvas
 
-function draw(){
-    
+function draw() {
+
     ctx.drawImage(ground,0,0);
-    
-    for( let i = 0; i < snake.length ; i++){
-        ctx.fillStyle = ( i == 0 )? "green" : "white";
-        ctx.fillRect(snake[i].x,snake[i].y,box,box);
-        
+
+    for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = (i == 0) ? "green" : "white";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+
         ctx.strokeStyle = "red";
-        ctx.strokeRect(snake[i].x,snake[i].y,box,box);
+        ctx.strokeRect(snake[i].x, snake[i].y, box, box);
     }
-    
+
+
+
     ctx.drawImage(foodImg, food.x, food.y);
     
     // old head position
@@ -110,7 +146,10 @@ function draw(){
     // if the snake eats the food
     if(snakeX == food.x && snakeY == food.y){
         score++;
-        eat.play();
+
+        if (menu.isSoundOn)
+            eat.play();
+
         food = {
             x : Math.floor(Math.random()*17+1) * box,
             y : Math.floor(Math.random()*15+3) * box
@@ -129,28 +168,70 @@ function draw(){
     }
     
     // game over
-    
+
     if(snakeX < box || snakeX > 17 * box || snakeY < 3*box || snakeY > 17*box || collision(newHead,snake)){
-        clearInterval(game);
-        dead.play();
+
+        menu.title = "you score: " + score;
+        resetGame();
+        menu.isHidden = false;
+        menu.drawMenu();
+
+        if (menu.isSoundOn)
+            dead.play();
+
     }
-    
-    snake.unshift(newHead);
+
+    if (!isGameEnd){
+        snake.unshift(newHead);
+    } else{
+        snake.unshift({x: 9*box, y: 10*box});
+    }
+
     
     ctx.fillStyle = "white";
     ctx.font = "45px Changa one";
-    ctx.fillText(score,2*box,1.6*box);
+    ctx.fillText(score, 2*box, 1.6*box);
+
+    menu.drawMenu();
 }
 
-// call draw function every 100 ms
 
-let game = setInterval(draw,100);
+function resetGame() {
+
+    isGameEnd = true;
+
+    snake = [];
+
+    score = 0;
+
+    d = "";
+
+}
+
+function startGame() {
+
+    clearInterval(game);
+    let choice = menu.getMenuItemChoice();
+
+    if (choice === "slow") {
+        snakeSpeed = 150;
+    }
+
+    if (choice === "medium") {
+        snakeSpeed = 100;
+    }
+
+    if (choice === "fast") {
+        snakeSpeed = 75;
+    }
+
+    isGameEnd = false;
+
+    game = setInterval(draw, snakeSpeed);
+}
 
 
-
-
-
-
+let game = setInterval(draw, 100);
 
 
 
